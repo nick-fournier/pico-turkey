@@ -1,5 +1,4 @@
 from lcd_api import LcdApi
-from machine import I2C
 from utime import sleep_ms
  
 # The PCF8574 has a jumper selectable address: 0x20 - 0x27

@@ -4,12 +4,13 @@ import ubinascii
 import time
 from env import SSID, PASSWORD
 
+network.hostname('jive.turkey')
 wlan = network.WLAN(network.STA_IF)
 
 def wifi_connect():
         
     # Connect to the network
-    wlan.active(True)        
+    wlan.active(True)
     wlan.config(pm = 0xa11140)  # Disable power-save mode
     wlan.connect(ssid=SSID, key=PASSWORD)
     mac = ubinascii.hexlify(wlan.config('mac'),':').decode()
