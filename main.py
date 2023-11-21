@@ -119,7 +119,7 @@ class PicoThermometer:
             lcd.clear()
                         
             msg = (
-                f"{temp:.2f}F {self.rate:+.1f}/min\n" +
+                f"{temp:.1f}F {self.rate:+.1f}/min\n" +
                 f"{self.netinfo['ip']}"
             )
                         
