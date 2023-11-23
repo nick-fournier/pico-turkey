@@ -1,3 +1,12 @@
+# Caclulate the standard deviation of a column of data
+# x is a list of floats
+def stdev(x):
+  ave = sum(x) / len(x)  
+  stdev = (sum([(i - ave) ** 2 for i in x]) / len(x)) ** 0.5  
+
+  return stdev
+
+
 # Compute the average of a column of data
 # df is a list of lists of floats, i is the index of the data within
 # df to average.

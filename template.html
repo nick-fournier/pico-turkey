@@ -4,18 +4,40 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <!-- Include Bootstrap CSS with Darkly theme -->
-  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <title>Turkey Temperature!</title>
+  <style>
+    body {
+      background-color: #212529; /* Dark background color */
+      color: white; /* Text color */
+    }
+    .container {
+      max-width: 100%;
+    }
+  </style>
 </head>
-<body class="bg-dark text-white">
+<body>
 
-<div id="time-series-plot"></div>
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-6 col-sm-12">
+      <label for="forecastDuration" style="color: white;">Forecast (minutes): </label>
+      <input type="number" id="forecastDuration" value="10" min="1" max="99999" style="color: black; width: 4em;"> <!-- Input text color and width -->
+    </div>
+    <div class="col-md-6 col-sm-12">
+      <label for="targetTemperature" style="color: white;">Target:</label>
+      <input type="number" id="targetTemperature" value="165" max="99999" style="color: black; width: 4em;"> <!-- Input text color and width -->
+    </div>
+  </div>
 
-<div>
-  <label for="forecastDuration">Enter forecast duration (minutes): </label>
-  <input type="number" id="forecastDuration" value="10" min="1">
-  <!-- <button onclick="updatePlot()" class="btn btn-primary">Forecast</button> -->
+  <!-- <button onclick="updatePlot()" class="btn btn-primary mt-2">Forecast</button> -->
+</div>
+
+<div class="container mt-4">
+  <div id="currentTemperature" style="font-size: 2em;"></div>
+  <div id="time-series-plot"></div>
+  <div id="completionCalculation" style="color: white;"></div>
 </div>
 
 <script>
@@ -24,8 +46,9 @@
     fetch('{{webhost}}') // Replace with your server endpoint
       .then(response => response.json())
       .then(jsonData => {
-        // Extract top  <!-- <button onclick="updatePlot()" class="btn btn-primary">Forecast</button>-level fields
+        // Extract top-level fields
         var rate = jsonData.rate;
+        var stdDev = jsonData.stdev;
         var nestedData = jsonData.data;
 
         // Convert timestamp strings to JavaScript Date objects
@@ -58,6 +81,15 @@
           forecastTemperatures.push(forecastTemperature);
         }
 
+        // User input for target temperature
+        var targetTemperatureInput = document.getElementById('targetTemperature');
+        var targetTemperature = parseFloat(targetTemperatureInput.value);
+
+        // Calculate estimated time to completion
+        var currentTime = new Date();
+        var currentTemperature = temperatures[temperatures.length - 1];
+        var timeToCompletion = (targetTemperature - currentTemperature) / rate;
+
         // Create the time series mountain plot
         var trace = {
           x: timestamps,
@@ -71,7 +103,7 @@
           name: 'Actual Temperature',
         };
 
-        // Create the forecast trace
+        // Create the forecast trace with a dotted line
         var forecastTrace = {
           x: forecastTimestamps,
           y: forecastTemperatures,
@@ -85,15 +117,9 @@
         };
 
         var layout = {
-          title: {
-            text: 'Turkey Temperature!',
-            font: {
-              color: 'white',  // Title text color
-            },
-          },
           xaxis: {
             title: {
-              text: 'Timestamp',
+              // text: 'Timestamp',
               font: {
                 color: 'white',  // X-axis title text color
               },
@@ -107,13 +133,13 @@
           },
           yaxis: {
             title: {
-              text: 'Temperature',
+              text: 'Temperature (F)',
               font: {
                 color: 'white',  // Y-axis title text color
               },
             },
             tickfont: {
-              color: 'white',  // Tick label text color
+              color: 'white',  // Y-axis tick label text color
             },
             showgrid: true,  // Display grid lines on the y-axis
             gridcolor: 'gray',  // Set grid lines color
@@ -122,15 +148,31 @@
             font: {
               color: 'white',  // Legend font color
             },
+            x: 0,   // Set x to 0 for left alignment
+            y: -0.2, // Set y to -0.2 for below the chart
           },
-          paper_bgcolor: 'rgba(0,0,0,0)',  // Transparent background color of the chart
-          plot_bgcolor: 'rgba(0,0,0,0.1)',   // Transparent background color of the plot area
+          paper_bgcolor: 'rgba(0,0,0,0.1)',  // Transparent background color of the chart
+          plot_bgcolor: 'rgba(0,0,0,0)',   // Transparent background color of the plot area
         };
 
         var data = [trace, forecastTrace];
 
         // Use Plotly to create or update the plot
         Plotly.newPlot('time-series-plot', data, layout);
+
+        // Display the current temperature
+        var currentTemperatureDiv = document.getElementById('currentTemperature');
+        // currentTemperatureDiv.innerHTML = '' + currentTemperature.toFixed(2) + ' °F';
+        currentTemperatureDiv.innerHTML = '' + currentTemperature.toFixed(2) + ' °F ± ' + stdDev.toFixed(2) + '';
+
+        // Display the estimated time to completion
+        var completionCalculationDiv = document.getElementById('completionCalculation');
+        if (!isNaN(timeToCompletion) && isFinite(timeToCompletion) && timeToCompletion > 0) {
+          var completionTimeString = formatTimeToCompletion(timeToCompletion);
+          completionCalculationDiv.innerHTML = 'Estimated Time: ' + completionTimeString;
+        } else {
+          completionCalculationDiv.innerHTML = 'Target temperature not reachable or already surpassed.';
+        }
       })
       .catch(error => console.error('Error fetching data:', error));
   }
@@ -138,8 +180,22 @@
   // Call the updatePlot function initially
   updatePlot();
 
-  // Set up an interval to update the plot every 5 seconds
-  setInterval(updatePlot, 5000);
+  // Set up an interval to update the plot every 10 seconds
+  setInterval(updatePlot, 10000);
+
+  // Function to format the time to completion as HH:MM:SS
+  function formatTimeToCompletion(timeToCompletion) {
+    var hours = Math.floor(timeToCompletion / 60);
+    var minutes = Math.floor(timeToCompletion % 60);
+    var seconds = Math.floor((timeToCompletion * 60) % 60);
+
+    return padZero(hours) + ':' + padZero(minutes) + ':' + padZero(seconds);
+  }
+
+  // Function to pad zero to single-digit numbers
+  function padZero(num) {
+    return num < 10 ? '0' + num : num;
+  }
 </script>
 
 </body>
