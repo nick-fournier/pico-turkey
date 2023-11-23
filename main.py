@@ -157,7 +157,7 @@ class PicoThermometer:
                                         
             # If at least 2 readings readings, calculate a rate
             slope = 0
-            if len(self.tempstack) >= 4:
+            if len(self.tempstack) >= 2:
                 # Extract last 1 minute of data
                 shortstack = [t['temperature'] for t in self.tempstack[-self.maxshort:]]
             
