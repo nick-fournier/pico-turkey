@@ -1,5 +1,9 @@
 import utime
 
+# Calibration
+CAL_OFFSET = -2.25  # The calibration offset in degrees Celcius
+CAL_FACTOR = 0.25    # The calibration factor
+
 class MAX6675:
     MEASUREMENT_PERIOD_MS = 220
 
@@ -57,7 +61,7 @@ class MAX6675:
         """
         return self._error
 
-    def read(self):
+    def read_celsius(self):
         """
         Reads the last measurement and starts a new one. If a new measurement is not ready yet, it returns the last value.
         Note: The last measurement can be quite old (e.g., since the last call to `read`).
@@ -91,7 +95,13 @@ class MAX6675:
             # Finish the protocol and start a new measurement.
             self._cs.high()
             self._last_measurement_start = utime.ticks_ms()
-
-            self._last_read_temp = value * 0.25
+            
+            self._last_read_temp = self.calibrate(value)
 
         return self._last_read_temp
+    
+    def read_fahrenheit(self):
+        return self.read_celsius() * (9/5) + 32
+    
+    def calibrate(self, value):
+        return value * CAL_FACTOR + CAL_OFFSET

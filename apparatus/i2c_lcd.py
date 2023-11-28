@@ -1,5 +1,9 @@
-from lcd_api import LcdApi
+from apparatus.lcd_api import LcdApi
 from utime import sleep_ms
+
+# The LCD display
+I2C_NUM_ROWS = 2
+I2C_NUM_COLS = 16
  
 # The PCF8574 has a jumper selectable address: 0x20 - 0x27
 DEFAULT_I2C_ADDR = 0x27
