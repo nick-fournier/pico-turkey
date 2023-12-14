@@ -15,9 +15,9 @@ heartbeat = 5  # Seconds
 # Initialize --------------------------------------------------------------- #
 # The Thermocouple sensor
 sensor = MAX6675(
-    sck = Pin(2, Pin.OUT), 
-    cs = Pin(3, Pin.OUT),
-    so = Pin(4, Pin.IN)
+    sck = Pin(17, Pin.OUT), 
+    cs = Pin(16, Pin.OUT),
+    so = Pin(18, Pin.IN)
     )
 
 # Webserver ----------------------------------------------------------------- #

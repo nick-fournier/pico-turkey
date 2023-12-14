@@ -4,6 +4,9 @@ import utime
 CAL_OFFSET = -2.25  # The calibration offset in degrees Celcius
 CAL_FACTOR = 0.25    # The calibration factor
 
+# Boil = 212
+# Freezing = 2.25
+
 class MAX6675:
     MEASUREMENT_PERIOD_MS = 220
 
