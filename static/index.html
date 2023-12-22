@@ -27,13 +27,20 @@
 </head>
 <body>
 
-  <div class="container md-4 mt-4">
-    <div id="currentTemperature" style="font-size: 2em;"></div>
+
+  <div class="container ml-0">
     <div id="time-series-plot"></div>
-    <div id="completionCalculation" style="color: white;"></div>
   </div>
 
-  <div class="container md-4 ml-4">
+  <div class="container md-4 ml-4">    
+    <div class="row">
+      <div id="currentTemperature" style="font-size: 1em;"></div>
+    </div>
+
+    <div class="row">
+      <div id="completionCalculation" style="color: white;"></div>
+    </div>
+    
     <div class="row">
       <div id="leftRow">
         <label for="forecastDuration" style="color: white;">Forecast:</label>
@@ -61,7 +68,7 @@
   
 
 
-<div class="container md-4">
+<div class="container md-4 ml-4">
   <button onclick="updatePlot()" class="btn btn-primary mt-2">Update</button>
   <button onclick="clearLocalStorage()" class="btn btn-danger mt-2">Reset</button>
 </div>
