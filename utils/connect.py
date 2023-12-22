@@ -47,3 +47,6 @@ def connect_to_network():
     LCD.clear()
     
     return {'ip': ip, 'mac': mac}
+
+
+

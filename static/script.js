@@ -1,12 +1,13 @@
 // Check if local storage contains data, if not, initialize with empty arrays
-var timestamps = JSON.parse(localStorage.getItem('timestamps')) || [];
+var stringTimestamps = JSON.parse(localStorage.getItem('timestamps')) || [];
 var temperatures = JSON.parse(localStorage.getItem('temperatures')) || [];
 
 // Function to clear local storage
 function clearLocalStorage() {
-  localStorage.removeItem('timestamps');
-  localStorage.removeItem('temperatures');
-  // Clear arrays as well
+  console.log('Clearing local storage');
+  localStorage.clear();
+  // Clear current arrays as well
+  stringTimestamps = [];
   timestamps = [];
   temperatures = [];
   // Update the plot after clearing local storage
@@ -27,27 +28,50 @@ function padZero(num) {
 }
 
 function updatePlot() {
-  // Fetch JSON with fields "timestamp," "temperature," "rate," and "data" from the server
-  fetch('/data') // Replace with your server endpoint
-    .then(response => response.json())
-    .then(jsonData => {
 
-      // Extract fields from the fetched data
-      var timestamp = jsonData.timestamp;
-      var temperature = jsonData.temperature;
-      var rate = jsonData.rate;
-      var stdDev = jsonData.stdev;
+  // Get the latest time stamp, if any.
+  var lastTimestampString = stringTimestamps[stringTimestamps.length - 1];
 
-      // Append timestamp and temperature to local arrays
-      timestamps.push(timestamp);
-      temperatures.push(temperature);
+  // If there is no timestamp, set the current timestamp to 0 to fetch all data
+  if (lastTimestampString === undefined) {
+    lastTimestampString = 0;
+  }
+
+  // Fetch current data from /data/current endpoint which is a JSON with timestamp, temperature, rate, and stdev
+  // Fetch streaming data from /data/stream/<from_timestamp> endpoint with the format [[timestamp, temperature], ...]
+  const current_request = fetch('/data/current').then(response => response.json());
+  const stream_request = fetch('/data/stream/' + lastTimestampString).then(response => response.text());
+
+  // Process the fetched data
+  Promise.all([current_request, stream_request])
+    .then(([currentJSON, dataString]) => {
+      // Extract the current data from the fetched data and convert to float
+      var heartbeat = parseFloat(currentJSON.heartbeat);
+      var currentTemperature = parseFloat(currentJSON.temperature);
+      var rate = parseFloat(currentJSON.rate);
+      var stdDev = parseFloat(currentJSON.stdev);
+
+      // Define regular expression patterns for extracting timestamps and temperatures
+      const timestampPattern = /\[([\d\s:-]+),\s([\d.]+)\]/g;
+
+      // Extract matches using the regular expression and append to the arrays
+      // If the timestamp is already in the array, skip it
+      let match;
+      while ((match = timestampPattern.exec(dataString)) !== null) {
+        if (stringTimestamps.includes(match[1])) {
+          continue;
+        } else {
+          stringTimestamps.push(match[1]);
+          temperatures.push(parseFloat(match[2]));
+        }
+      }
 
       // Store data in local storage as original string
-      localStorage.setItem('timestamps', JSON.stringify(timestamps.map(String)));
+      localStorage.setItem('timestamps', JSON.stringify(stringTimestamps.map(String)));
       localStorage.setItem('temperatures', JSON.stringify(temperatures));
 
       // Convert timestamps from string to Date objects
-      timestamps = timestamps.map(timestamp => new Date(timestamp));
+      timestamps = stringTimestamps.map(timestamp => new Date(timestamp));
 
       // User input for forecast duration
       var forecastDurationInput = document.getElementById('forecastDuration');
@@ -135,7 +159,6 @@ function updatePlot() {
       };
 
       // Calculate estimated time to completion
-      var currentTemperature = temperatures[temperatures.length - 1];
       var TTC = (targetTemperature - currentTemperature) / rate;
       var data = [trace, forecastTrace];
 

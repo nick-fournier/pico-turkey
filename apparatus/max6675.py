@@ -6,6 +6,7 @@ CAL_FACTOR = 0.25    # The calibration factor
 
 # Boil = 212
 # Freezing = 2.25
+# Calculate calibration?
 
 class MAX6675:
     MEASUREMENT_PERIOD_MS = 220

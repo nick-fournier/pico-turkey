@@ -1,16 +1,15 @@
 import asyncio
-from utils.clock import sync_time
+from utils import clock
 from sensor import PicoThermometer
 from microdot.microdot import Response
 from microdot.microdot_asyncio import Microdot
 from utils.connect import connect_to_network
 
-# Server
+# Server -------------------------------------------------------------------- #
 server = Microdot()
 Response.default_content_type = 'text/html'
 
-
-with open('index.html', 'r') as f:
+with open('static/index.html', 'r') as f:
     html_string = f.read()
     
 # with open('style.css', 'r') as f:
@@ -35,24 +34,53 @@ def static(request, path):
     return js_string#send_file("static/" + path)
 
 
-@server.route('/data')
-async def api(request):
-    data = Thermo.get_current_data()
-    print('Client requested data')
-    return data
+@server.route('/data/current')
+async def api_current(request, methods = ['GET']):
+    print('Client requested data current static data')
+    return Thermo.get_current_data()
 
+
+@server.route('/data/stream')
+async def api_stream_all(request, methods = ['GET']):
+    print('Client requested data stream')
+    return Thermo.get_data_stream()
+
+
+@server.route('/data/stream/<from_timestamp>', methods = ['GET'])
+async def api_stream(request, from_timestamp):
+    
+    # Parse URL string, %20 is a space in hexadecimal
+    from_timestamp = from_timestamp.replace('%20', ' ')
+    
+    if from_timestamp.isdigit():
+        print('Converting timestamp to epoch int')
+        from_timestamp = int(from_timestamp)
+    else:
+        from_timestamp = clock.string_to_datetime(from_timestamp)
+    
+    timestamp_str = clock.datetime_to_string(from_timestamp)
+    
+    if from_timestamp == 0:
+        n_readings = len(Thermo.stack)
+    else:
+        n_readings = (Thermo.stack[-1][0] - from_timestamp) / Thermo.heartbeat
+    
+    print(f'Client requested data stream since {timestamp_str} ({n_readings:.0f} readings)')
+    
+    return Thermo.get_data_stream(from_timestamp)
 
 async def main():
     
     print('Connecting to Network...')
     netinfo = connect_to_network()
     
+    
     # Instantiate the webserver class
     global Thermo
     Thermo = PicoThermometer(netinfo)
             
     # Sync the clock
-    sync_time()
+    clock.sync_time()
     
     # Start the sensor reading task
     sensor_task = asyncio.create_task(Thermo.read_sensors())
