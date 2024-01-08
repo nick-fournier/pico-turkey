@@ -8,8 +8,8 @@ from apparatus.lcd import LCD
 # Initialize --------------------------------------------------------------- #
 # The Thermocouple sensor
 sensor = MAX6675(
-    sck = Pin(17, Pin.OUT), 
-    cs = Pin(16, Pin.OUT),
+    sck = Pin(19, Pin.OUT), 
+    cs = Pin(20, Pin.OUT),
     so = Pin(18, Pin.IN)
     )
 
