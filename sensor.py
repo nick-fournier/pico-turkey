@@ -2,6 +2,7 @@ import gc
 import asyncio
 from machine import Pin
 from utils import clock
+from kalman import KalmanFilter
 from apparatus.max6675 import MAX6675
 from apparatus.lcd import LCD
 
@@ -13,35 +14,66 @@ sensor = MAX6675(
     so = Pin(18, Pin.IN)
     )
 
+class ExponentialMovingAverage:
+    def __init__(self, alpha):
+        """
+        Initialize the EMA calculator.
+
+        :param alpha: Smoothing factor (0 < alpha ≤ 1).
+        
+        Higher alpha discounts older observations faster.
+        
+        """
+        if not (0 < alpha <= 1):
+            raise ValueError("Alpha must be in the range (0, 1].")
+        self.alpha = alpha
+        self.ema = None
+
+    def update(self, value):
+        """
+        Update the EMA with a new value.
+
+        :param value: New data point.
+        :return: Updated EMA.
+        """
+        if self.ema is None:
+            # Initialize EMA with the first value
+            self.ema = value
+        else:
+            # Update EMA
+            self.ema = self.alpha * value + (1 - self.alpha) * self.ema
+        return self.ema
+
 # Webserver ----------------------------------------------------------------- #
 class PicoThermometer:
     
-    heartbeat = 5       # Seconds between readings
+    heartbeat = 1       # Seconds between readings
+    log_rate = 5        # Log to stack every nth reading
     target = 165        # Target temperature
     rate = 0            # Rate of temperature change
     stdev = 0           # Standard deviation of the last minute of data
     timestamp = ''      # Current timestamp
     temperature = 0     # Current temperature
-    stack = []      # Data stack of readings tuple (timestamp and temperature)
-    stacklength = 2 * int(60 / heartbeat)  # Rolling average over 2 minute of data        
+    stack = []          # Data stack of readings tuple (timestamp and temperature)
+    stacklength = 2 * int(60 / log_rate)  # Rolling average over 2 minute of data    
     
     def __init__(self, netinfo) -> None:
         self.netinfo = netinfo
-        
+        self.KF = KalmanFilter(dt=self.heartbeat, x0=68, x0_acc=0.25)
+        self.EMA = ExponentialMovingAverage(alpha=0.1)
+
     def update_target(self, target):
         self.target = target
-        
-        
+     
     def get_current_data(self):
         data = {
             'heartbeat': self.heartbeat,
-            'rate': self.rate, 
-            'stdev': self.stdev,
+            'rate': self.rate,
             'timestamp': self.timestamp,
             'temperature': self.temperature
         }
         return data
-    
+
     def get_data_stream(self, from_time = 0):
         
         assert isinstance(from_time, int), 'from_time must be an datetime epoch integer'
@@ -60,71 +92,58 @@ class PicoThermometer:
                     yield ''
         
         return readings_generator()
-    
-    @staticmethod
-    def calc_stack_stats(stack):
-        ave_x = (len(stack) - 1) / 2
-        ave_y = 0
-        
-        m_numer = 0
-        m_denom = 0    
-        stdev = 0
-        
-        for _, y_i in stack:
-            ave_y += y_i / len(stack)
-                
-        for x_i, (_, y_i) in enumerate(stack):
-            stdev += (y_i - ave_y) ** 2 / len(stack)
-            m_numer += x_i * (y_i - ave_y)
-            m_denom += x_i * (x_i - ave_x)
-        
-        slope = m_numer / m_denom
-        
-        return stdev, slope
-
-            
+     
     async def read_sensors(self, period = heartbeat, loop = True):
+        counter = 0
         while True:
             
             # Get temp reading & convert to Fahrenheit
-            self.temperature = sensor.read_fahrenheit()
-            # self.timestamp = clock.get_datetime_string()
+            measurement = sensor.read_fahrenheit()
+            
+            # Update Kalman filter
+            self.KF.update(measurement)
+            
+            # Update timestamp in Thermometer
             self.timestamp = clock.get_datetime()
+                
+            # Update temperature state in Thermometer
+            self.temperature = self.KF.x[0]
             
-            # Add to the web data stack
-            self.stack.append(
-                (self.timestamp, self.temperature)
-            )
+            # Calculate instantaneous rate of change per minute
+            inst_rate = self.KF.x[1] * (60 / self.heartbeat) # type: ignore
+            
+            # Update rate of change per min state in Thermometer as Exp. Moving Average
+            self.rate = self.EMA.update(inst_rate)             
 
-            # Fixed length stack
-            if len(self.stack) > self.stacklength:
-                self.stack.pop(0)
-                                        
-            # If at least 2 readings readings, calculate a rate
-            slope = 0
-            if len(self.stack) >= 4:
-                self.stdev, slope = self.calc_stack_stats(self.stack)                
-            
-            # Calculate rate per 10 minutes
-            self.rate = slope * (60 / self.heartbeat)
-            
+            # Log to stack every nth reading
+            counter += 1
+            if counter % self.log_rate == 0:
+
+                # Add to the data stack for web data
+                self.stack.append(
+                    (self.timestamp, self.temperature)
+                )
+
+                # Fixed length stack
+                if len(self.stack) > self.stacklength:
+                    self.stack.pop(0)
+                
+                # Garbage collection
+                mem_free = gc.mem_free() / 1024 # type: ignore
+                
+                # Print to console
+                msg = [
+                    f'Log rate ({self.log_rate:.0f}s)',
+                    f'{clock.datetime_to_string(self.timestamp)}',
+                    f'Temp: {self.temperature:.2f}F',
+                    f'Rate: {self.rate:+.1f}F/min',
+                    f'mem free {mem_free:.0f} kb'
+                ]
+                print(' '.join(msg))
+
             # If single reading requested, return
             if not loop:
-                return
-            
-            # Print to console
-            mem_free = gc.mem_free() / 1024 # type: ignore
-            
-            msg = [
-                f'Heartbeat ({self.heartbeat:.0f}s)',
-                f'{clock.datetime_to_string(self.timestamp)}',
-                f'Temp: {self.temperature:.2f}F',
-                f'Stdev: {self.stdev:.1f}',
-                f'Rate: {self.rate:+.1f}F/min',
-                f'mem free {mem_free:.0f} kb'
-            ]
-            print(' '.join(msg))
-            
+                return            
 
             # print to LCD
             LCD.clear()

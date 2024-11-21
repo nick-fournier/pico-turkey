@@ -5,6 +5,10 @@ from microdot.microdot import Response
 from microdot.microdot_asyncio import Microdot
 from utils.connect import connect_to_network
 
+
+# Workaround to allow pico to access the serial port, run the following command:
+# sudo chmod a+rw /dev/ttyACM0
+
 # Server -------------------------------------------------------------------- #
 server = Microdot()
 Response.default_content_type = 'text/html'
@@ -60,10 +64,7 @@ async def api_stream(request, from_timestamp):
     
     timestamp_str = clock.datetime_to_string(from_timestamp)
     
-    if from_timestamp == 0:
-        n_readings = len(Thermo.stack)
-    else:
-        n_readings = (Thermo.stack[-1][0] - from_timestamp) / Thermo.heartbeat
+    n_readings = len(Thermo.stack)
     
     print(f'Client requested data stream since {timestamp_str} ({n_readings:.0f} readings)')
     

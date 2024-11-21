@@ -46,10 +46,8 @@ function updatePlot() {
   Promise.all([current_request, stream_request])
     .then(([currentJSON, dataString]) => {
       // Extract the current data from the fetched data and convert to float
-      var heartbeat = parseFloat(currentJSON.heartbeat);
       var currentTemperature = parseFloat(currentJSON.temperature);
       var rate = parseFloat(currentJSON.rate);
-      var stdDev = parseFloat(currentJSON.stdev);
 
       // Define regular expression patterns for extracting timestamps and temperatures
       const timestampPattern = /\[([\d\s:-]+),\s([\d.]+)\]/g;
@@ -167,7 +165,7 @@ function updatePlot() {
 
       // Display the current temperature with plus-minus symbol
       var currentTemperatureDiv = document.getElementById('currentTemperature');
-      currentTemperatureDiv.innerHTML = '' + currentTemperature.toFixed(2) + ' °F ± ' + stdDev.toFixed(2) + '';
+      currentTemperatureDiv.innerHTML = '' + currentTemperature.toFixed(2) + ' °F ± ' + rate.toFixed(2) + ' °F/min';
 
       // Display the estimated time to completion
       var completionCalculationDiv = document.getElementById('completionCalculation');
