@@ -59,7 +59,7 @@ class PicoThermometer:
     
     def __init__(self, netinfo) -> None:
         self.netinfo = netinfo
-        self.KF = KalmanFilter(dt=self.heartbeat, x0=68, x0_acc=0.25)
+        self.KF = KalmanFilter(dt=self.heartbeat, x0=68, x0_acc=0.25) # type: ignore
         self.EMA = ExponentialMovingAverage(alpha=0.1)
 
     def update_target(self, target):
