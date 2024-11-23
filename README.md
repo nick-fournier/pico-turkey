@@ -19,7 +19,7 @@ The projection is calculated using a 1D Kalman filter with position (temperature
 
 1. Create a `env.py` file in the root directory of the project with the following content:
     ```
-    SSID='your wife'
+    SSID='your wifi ssid'
     PASSWORD='your_password'
     ```
 
