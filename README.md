@@ -3,7 +3,9 @@ This repository contains the code for a Raspberry Pico-based thermocouple thermo
 
 The thermometer provides a micro-webserver to display the current temperature, temperature history, projection and estimated time to completion. The thermometer can be accessed via a web browser on a computer, tablet or smartphone by entering the IP address of the Raspberry Pico. The temperature history is stored in a circular buffer and is displayed as a graph on the web page, which is updated every 5 seconds and stores longer-term temperature history in the browser's local storage. 
 
-The projection is calculated using a 1D Kalman filter with position (temperature), velocity (temp per time), and acceleration (temp per time^2) states. The estimated time to completion is calculated by extrapolating the moving average rate of change of the temperature to the desired temperature. The rate of change is calculated as a exponential moving average of the temperature history.
+The projection is calculated using a 1D Kalman filter with position (temperature), velocity (temp per time), and acceleration (temp per time^2) states. The estimated time to completion is calculated by extrapolating the moving average rate of change of the temperature to the desired temperature.
+
+The rate of change is calculated as a exponential moving average (EMA) of the Kalman filters first order rate, temperature per time. Although the Kalman filter already smooths the sensor data, the rate is still fairly choppy. The EMA helps to further stabilizes the rate by averaging it against past measurements while remaining memory-less.
 
 # Materials
 - [Raspberry Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/)
