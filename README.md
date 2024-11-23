@@ -5,6 +5,20 @@ The thermometer provides a micro-webserver to display the current temperature, t
 
 The projection is calculated using a 1D Kalman filter with position (temperature), velocity (temp per time), and acceleration (temp per time^2) states. The estimated time to completion is calculated by extrapolating the moving average rate of change of the temperature to the desired temperature. The rate of change is calculated as a exponential moving average of the temperature history.
 
+### Action shots
+
+Here is the simply web interface. The thermometer is currently monitoring the temperature of a turkey in the oven.
+<img src="readme_files/screenshot.png" alt="Webpage screenshot" height="600">
+
+Here is the inside, you can see the lithium batterpack shoved on the bottom and the circuit board is the charge controller that came with it. I simply hardwired the 5V USB to the Pico. To keep it from bouncing around I simply hot-glued it to the bottom.
+<img src="readme_files/inside_1.jpg" alt="Inside of the thermometer" height="400">
+
+On the top of the box I crammed the LED display, the thermocouple amplifier, and the Raspberry Pico.
+<img src="readme_files/inside_2.jpg" alt="Inside of the thermometer" height="400">
+
+The outside of the thermometer. I don't have a proper dremmel so I used some power tools to cut a hole for the LED display. Yeah, not my best work, but it works.
+<img src="readme_files/outside_1.jpg" alt="Outside of the thermometer" height="352">
+
 # Materials
 - [Raspberry Pico](https://www.raspberrypi.com/products/raspberry-pi-pico/)
 - Type K probe thermocouple [Amazon](https://www.amazon.com/gp/product/B07PJNRBKG/ref=ppx_yo_dt_b_search_asin_title?ie=UTF8&psc=1)

@@ -1,29 +1,31 @@
 import network
 import time
 import ubinascii
-from env import SSID, PASSWORD
+from env import CONNECTIONS
 from apparatus.lcd import LCD
 
 # Wifi connection
 network.hostname('jive.turkey')
 wlan = network.WLAN(network.STA_IF)
 
-
 def connect_to_network():
         
     # Connect to the network
     wlan.active(True)
-    wlan.config(pm = 0xa11140)  # Disable power-save mode
-    wlan.connect(ssid=SSID, key=PASSWORD)
+    wlan.config(pm = 0xa11140)      # Disable power-save mode
     mac = ubinascii.hexlify(wlan.config('mac'),':').decode()
     
-    # Wait for connect or fail
-    wait = 10
-    while wait > 0:
+    # Try each connection in the list 3 times
+    retry = len(CONNECTIONS) * 3
+    while retry > 0:
+        # Try next SSID, PASSWORD pair
+        SSID, PASSWORD = CONNECTIONS[retry % len(CONNECTIONS)]
+        wlan.connect(ssid=SSID, key=PASSWORD)
+        
         LCD.clear()
         if wlan.status() < 0 or wlan.status() >= 3:
             break
-        wait -= 1
+        retry -= 1
         print('waiting for connection...')
         LCD.putstr(f'Connecting to\n{SSID[:14]}')
         time.sleep(2)
