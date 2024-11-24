@@ -1,5 +1,5 @@
 # Raspberry Pico Time-to-Turkey Thermocouple Thermometer (RPT<sup>5</sup>)
-This repository contains the code for a Raspberry Pico-based thermocouple thermometer that can be used to monitor the temperature of a turkey while it is cooking. The thermometer uses Type K thermocouple and a MAX31855 thermocouple amplifier. 
+This repository contains the code for a Raspberry Pico-based thermocouple thermometer that can be used to monitor the temperature of a turkey while it is cooking. The thermometer uses Type K thermocouple and a MAX6675 thermocouple amplifier. 
 
 The thermometer provides a micro-webserver to display the current temperature, temperature history, projection and estimated time to completion. The thermometer can be accessed via a web browser on a computer, tablet or smartphone by entering the IP address of the Raspberry Pico. The temperature history is stored in a circular buffer and is displayed as a graph on the web page, which is updated every 5 seconds and stores longer-term temperature history in the browser's local storage. 
 
