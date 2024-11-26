@@ -1,7 +1,7 @@
 import matrix
 
 class KalmanFilter:
-    def __init__(self, dt=1, x0=68, x0_acc=0.25):
+    def __init__(self, dt=1, x0=68, x0_acc=0.5):
         '''
         x0 -- initial position (temperature) [F]
         v0 -- initial velocity [F/sec]
