@@ -31,8 +31,8 @@ class KalmanFilter:
         # Process noise covariance
         self.Q = [
             [x0_acc, 0, 0],
-            [0, x0_acc, 0],
-            [0, 0, x0_acc]
+            [0, x0_acc**2, 0],
+            [0, 0, x0_acc**3]
         ]
         
         # Measurement matrix
